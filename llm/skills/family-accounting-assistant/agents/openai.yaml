@@ -1,0 +1,4 @@
+interface:
+  display_name: "Family Accounting Assistant"
+  short_description: "Operate the Family Ledger API for household bookkeeping."
+  default_prompt: "Use this skill to record household expenses, review budgets, analyze spending, and suggest tags through the Family Ledger API."

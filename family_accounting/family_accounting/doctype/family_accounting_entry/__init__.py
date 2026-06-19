@@ -1,0 +1,1 @@
+"""Family Accounting Entry DocType."""

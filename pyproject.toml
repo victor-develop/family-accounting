@@ -1,0 +1,25 @@
+[project]
+name = "family-accounting"
+version = "0.1.0"
+description = "Frappe Framework app for household accounting with LLM-ready APIs."
+authors = [
+  { name = "Victor", email = "victor.develop@outlook.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+  "frappe>=15.0.0"
+]
+readme = "README.md"
+license = { text = "MIT" }
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.frappe]
+app_name = "family_accounting"
+app_title = "Family Accounting"
+app_publisher = "Victor"
+app_description = "Family ledger, budget analytics, and LLM-friendly bookkeeping APIs."
+app_email = "victor.develop@outlook.com"
+app_license = "MIT"

@@ -1,0 +1,85 @@
+{
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "naming_series:",
+  "creation": "2026-06-20 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "category",
+    "period_start",
+    "period_end",
+    "limit_amount",
+    "currency"
+  ],
+  "fields": [
+    {
+      "default": "FAC-BUDGET-.YYYY.-",
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "FAC-BUDGET-.YYYY.-",
+      "reqd": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Category",
+      "reqd": 1
+    },
+    {
+      "fieldname": "period_start",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Period Start",
+      "reqd": 1
+    },
+    {
+      "fieldname": "period_end",
+      "fieldtype": "Date",
+      "label": "Period End",
+      "reqd": 1
+    },
+    {
+      "fieldname": "limit_amount",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "label": "Limit Amount",
+      "options": "currency",
+      "reqd": 1
+    },
+    {
+      "default": "HKD",
+      "fieldname": "currency",
+      "fieldtype": "Link",
+      "label": "Currency",
+      "options": "Currency"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "links": [],
+  "modified": "2026-06-20 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Family Accounting",
+  "name": "Family Accounting Budget",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "period_start",
+  "sort_order": "DESC",
+  "states": []
+}

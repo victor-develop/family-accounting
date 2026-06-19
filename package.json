@@ -1,0 +1,46 @@
+{
+  "name": "family-accounting",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Frappe Framework and Frappe UI family accounting system with LLM-ready APIs.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/mock-api/server.ts",
+    "dev:test": "NODE_ENV=test tsx src/mock-api/server.ts",
+    "build": "vue-tsc --noEmit && vite build",
+    "test": "npm run test:unit && npm run test:api && npm run test:python && npm run test:e2e",
+    "test:unit": "vitest run tests/unit",
+    "test:api": "vitest run tests/api",
+    "test:python": "python3 -m unittest discover -s tests/python -p 'test_*.py'",
+    "test:e2e": "playwright test",
+    "lint": "vue-tsc --noEmit"
+  },
+  "keywords": [
+    "frappe",
+    "frappe-ui",
+    "family-accounting",
+    "llm-tools"
+  ],
+  "author": "Victor",
+  "license": "MIT",
+  "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.3",
+    "express": "^5.2.1",
+    "frappe-ui": "^0.1.278",
+    "vue": "^3.5.38",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.10.2",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "3.4.17",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9",
+    "vue-tsc": "^3.1.6"
+  }
+}
