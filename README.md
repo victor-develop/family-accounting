@@ -65,11 +65,17 @@ From a bench:
 bench get-app family_accounting https://github.com/victor-develop/family-accounting
 bench --site your-site install-app family_accounting
 bench --site your-site migrate
-npm run build:frappe
 bench build --app family_accounting
 ```
 
-During active front-end work, run the local Vite harness. For Frappe serving, `npm run build:frappe` writes Vite assets to `family_accounting/public/frontend`; `/family-ledger` reads the generated manifest.
+Frappe's build pipeline calls `yarn build`, so make sure Yarn 1.x and the Frappe app's node dependencies are available:
+
+```bash
+npm install -g yarn@1.22.22
+cd apps/frappe && yarn install --frozen-lockfile
+```
+
+During active front-end work, run the local Vite harness. For Frappe serving, `npm run build:frappe` writes Vite assets to `family_accounting/public/frontend`; `/family-ledger` reads the generated manifest. The default `npm run build` now generates both local `dist/` assets and Frappe `public/frontend/` assets, so `bench build --app family_accounting` refreshes the real site bundle.
 
 Frappe stores ledger data in the site database as DocType tables, including `tabFamily Accounting Entry` and `tabFamily Accounting Budget`. On the local bench used for development, that means MariaDB for the selected site.
 

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "tsx src/mock-api/server.ts",
     "dev:test": "NODE_ENV=test tsx src/mock-api/server.ts",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vue-tsc --noEmit && vite build && FRAPPE_BUILD=1 vite build",
+    "build:web": "vue-tsc --noEmit && vite build",
     "build:frappe": "vue-tsc --noEmit && FRAPPE_BUILD=1 vite build",
     "test": "npm run test:unit && npm run test:api && npm run test:python && npm run test:e2e",
     "test:unit": "vitest run tests/unit",
