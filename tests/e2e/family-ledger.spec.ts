@@ -9,6 +9,7 @@ test.beforeEach(async ({ page }) => {
 test('records an entry with smart tagging and shows it in the ledger', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Family Ledger' })).toBeVisible()
 
+  await ensureDetailsOpen(page)
   const fullForm = page.getByRole('form', { name: 'Record a ledger entry' })
   await fullForm.getByLabel('Receipt or chat text').fill('Wellcome weekly supermarket groceries for dinner')
   await fullForm.getByLabel('Amount').fill('245.80')
@@ -36,12 +37,12 @@ test('records a minimal expense with only amount and description', async ({ page
 test('filters the ledger and renders analytics', async ({ page }) => {
   await page.getByRole('radio', { name: 'Ledger' }).click()
   await page.getByLabel('Search').fill('MTR')
-  await page.getByRole('button', { name: 'Refresh' }).click()
+  await clickVisibleAction(page, 'Refresh')
 
   await expect(page.getByTestId('ledger-list')).toContainText('MTR')
   await page.getByRole('radio', { name: 'Analytics' }).click()
   await expect(page.getByRole('heading', { name: 'Category Spend' })).toBeVisible()
-  await expect(page.getByText('Transport')).toBeVisible()
+  await expect(page.getByText('Transport', { exact: true }).first()).toBeVisible()
 })
 
 test('runs LLM-facing agent API operations from the UI', async ({ page }) => {
@@ -57,7 +58,7 @@ test('exports and clears ledger data from the ledger screen', async ({ page }) =
   await page.getByRole('radio', { name: 'Ledger' }).click()
 
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'JSON' }).click()
+  await clickVisibleAction(page, 'JSON')
   const download = await downloadPromise
   const downloadPath = await download.path()
   expect(download.suggestedFilename()).toMatch(/family-ledger.*\.json$/)
@@ -65,10 +66,35 @@ test('exports and clears ledger data from the ledger screen', async ({ page }) =
   const content = await fs.readFile(downloadPath!, 'utf-8')
   expect(content).toContain('Wellcome weekly groceries')
 
-  page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('Clear all family ledger entries')
-    await dialog.accept()
-  })
-  await page.getByRole('button', { name: 'Clear' }).click()
+  await clickVisibleAction(page, 'Clear')
+  await expect(page.getByRole('dialog', { name: 'Clear family ledger?' })).toBeVisible()
+  await page.getByRole('dialog', { name: 'Clear family ledger?' }).getByRole('button', { name: 'Clear ledger' }).click()
   await expect(page.locator('[data-testid="ledger-list"] article')).toHaveCount(0)
+  await expect(page.getByTestId('ledger-empty')).toContainText('No entries yet')
 })
+
+async function ensureDetailsOpen(page: import('@playwright/test').Page) {
+  const details = page.getByRole('button', { name: /Add details|Hide details/ })
+  if ((await details.textContent())?.includes('Add details')) {
+    await details.click()
+  }
+}
+
+async function clickVisibleAction(page: import('@playwright/test').Page, name: string) {
+  const exact = name === 'JSON' || name === 'CSV'
+  if (await clickFirstVisible(page.getByRole('button', { name, exact }))) return
+  await page.getByRole('button', { name: 'Actions' }).click()
+  if (await clickFirstVisible(page.getByRole('button', { name, exact }))) return
+  throw new Error(`Could not find visible action: ${name}`)
+}
+
+async function clickFirstVisible(locator: import('@playwright/test').Locator) {
+  for (let index = 0; index < await locator.count(); index += 1) {
+    const candidate = locator.nth(index)
+    if (await candidate.isVisible()) {
+      await candidate.click()
+      return true
+    }
+  }
+  return false
+}

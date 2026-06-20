@@ -8,6 +8,7 @@ Family Ledger is a small household accounting system built as a Frappe Framework
 - Frappe UI + Vue 3 + Tailwind front end for record, ledger, analytics, and agent API flows.
 - Provider-neutral smart tagging contract. The app ships deterministic baseline rules and exposes an LLM schema that any agent can use.
 - Minimal expense capture that only needs an amount and a description.
+- Mobile-first Quick Add UX with bottom navigation, progressive full-record details, search-first ledger, app-level clear confirmation, and no mobile horizontal overflow.
 - JSON/CSV export and explicit-confirmation ledger clearing.
 - Local Vite/Express dev harness that mirrors Frappe `/api/method/...` routes for fast browser and API tests.
 - Codex-style skill package in `llm/skills/family-accounting-assistant`.
@@ -22,6 +23,14 @@ Family Ledger is a small household accounting system built as a Frappe Framework
 6. Review monthly totals, category spend, member split, trends, and budget alerts.
 7. Export JSON/CSV or clear the ledger after explicit confirmation.
 8. Let an LLM assistant call method-specific APIs or the single `agent_execute` RPC.
+
+## Verified Journey
+
+The latest mobile-first flow is captured from the real local Frappe site with seeded DocType data:
+
+[Open the full screenshot journey](docs/user-journey/README.md)
+
+![Mobile Quick Add](docs/user-journey/01-mobile-record-quick-add.png)
 
 ## Local Development
 
@@ -49,13 +58,14 @@ The local server exposes the same API shape as the Frappe app:
 
 ```bash
 npm run test:unit
+npm run test:component
 npm run test:api
 npm run test:python
 npm run test:e2e
 npm test
 ```
 
-The browser tests use Playwright and start the local dev harness automatically.
+The component tests use Vue Test Utils with a DOM test environment for fast UX coverage without launching a browser. The browser tests use Playwright and start the local dev harness automatically.
 
 ## Install In Frappe
 
