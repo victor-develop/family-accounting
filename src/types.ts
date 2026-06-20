@@ -53,3 +53,27 @@ export interface EntryFilters {
   category?: string
   direction?: Direction | ''
 }
+
+export interface MinimalExpensePayload {
+  amount: number
+  description: string
+  household_member?: string
+  account?: string
+  posted_on?: string
+  currency?: string
+  created_by_agent?: boolean
+}
+
+export interface LedgerExport {
+  format: 'json' | 'csv'
+  filename: string
+  content_type: string
+  entry_count: number
+  entries?: LedgerEntry[]
+  content?: string
+}
+
+export interface ClearLedgerResult {
+  ok: boolean
+  deleted: number
+}

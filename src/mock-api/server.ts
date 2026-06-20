@@ -103,10 +103,23 @@ export async function createFamilyAccountingServer(options: ServerOptions = {}) 
 function dispatch(method: string, payload: Record<string, unknown>, store: LedgerStore) {
   if (method === 'suggest_tags') return store.suggestTags(payload)
   if (method === 'create_entry') return store.createEntry(payload)
+  if (method === 'create_minimal_expense') return store.createMinimalExpense({
+    amount: Number(payload.amount),
+    description: String(payload.description || ''),
+    household_member: typeof payload.household_member === 'string' ? payload.household_member : undefined,
+    account: typeof payload.account === 'string' ? payload.account : undefined,
+    posted_on: typeof payload.posted_on === 'string' ? payload.posted_on : undefined,
+    currency: typeof payload.currency === 'string' ? payload.currency : undefined,
+    created_by_agent: Boolean(payload.created_by_agent),
+  })
   if (method === 'list_entries') {
     return store.listEntries(parseFilters(payload.filters), Number(payload.limit || 50))
   }
   if (method === 'get_summary') return store.getSummary(parseFilters(payload.filters))
+  if (method === 'export_entries') {
+    return store.exportEntries(parseFilters(payload.filters), payload.format === 'csv' ? 'csv' : 'json')
+  }
+  if (method === 'clear_entries') return store.clearEntries(payload.confirm)
   if (method === 'agent_execute') {
     const operation = String(payload.operation || '')
     const agentPayload = normalizePayload(payload.payload || {})
@@ -116,7 +129,16 @@ function dispatch(method: string, payload: Record<string, unknown>, store: Ledge
     return {
       name: 'Family Accounting API',
       base_path: '/api/method/family_accounting.api',
-      methods: ['create_entry', 'list_entries', 'get_summary', 'suggest_tags', 'agent_execute'],
+      methods: [
+        'create_entry',
+        'create_minimal_expense',
+        'list_entries',
+        'get_summary',
+        'suggest_tags',
+        'export_entries',
+        'clear_entries',
+        'agent_execute',
+      ],
     }
   }
   throw new Error(`Unknown API method: ${method}`)

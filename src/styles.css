@@ -143,6 +143,11 @@ h3 {
   padding: 20px;
 }
 
+.record-stack {
+  display: grid;
+  gap: 16px;
+}
+
 .panel-title {
   display: flex;
   align-items: flex-start;
@@ -159,6 +164,13 @@ h3 {
 .ledger-panel {
   display: grid;
   gap: 16px;
+}
+
+.minimal-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.42fr) minmax(220px, 1fr) auto;
+  gap: 14px;
+  align-items: end;
 }
 
 .two-col,
@@ -184,6 +196,11 @@ h3 {
 .button-row {
   justify-content: flex-end;
   padding-top: 4px;
+}
+
+.ledger-actions {
+  justify-content: flex-end;
+  padding-top: 0;
 }
 
 .suggestion-box {
@@ -401,7 +418,8 @@ pre {
   }
 
   .filters,
-  .two-col {
+  .two-col,
+  .minimal-row {
     grid-template-columns: 1fr;
   }
 

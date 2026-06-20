@@ -173,6 +173,23 @@ def normalize_entry(payload: dict[str, Any]) -> LedgerEntry:
     )
 
 
+def minimal_expense_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    description = str(payload.get("description") or "").strip()
+    if not description:
+        raise LedgerValidationError("description is required")
+    return {
+        "posted_on": payload.get("posted_on") or date.today().isoformat(),
+        "household_member": payload.get("household_member") or "Victor",
+        "account": payload.get("account") or "Quick Capture",
+        "direction": "Expense",
+        "amount": payload.get("amount"),
+        "currency": payload.get("currency") or "HKD",
+        "source_text": description,
+        "note": description,
+        "created_by_agent": bool(payload.get("created_by_agent")),
+    }
+
+
 def summarize(entries: Iterable[dict[str, Any]], budgets: Iterable[dict[str, Any]] | None = None) -> dict[str, Any]:
     totals = {"income": Decimal("0"), "expense": Decimal("0"), "transfer": Decimal("0")}
     by_category: dict[str, Decimal] = {}

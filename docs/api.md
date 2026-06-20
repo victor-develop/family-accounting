@@ -13,9 +13,12 @@ All endpoints return Frappe-style JSON:
 | Method | Purpose |
 | --- | --- |
 | `create_entry` | Validate and create a household ledger entry. |
+| `create_minimal_expense` | Create an expense from only amount and description. |
 | `list_entries` | Return entries with optional filters. |
 | `get_summary` | Return totals, category spend, member split, month trend, and budget alerts. |
 | `suggest_tags` | Return deterministic tags plus provider-neutral LLM classification schema. |
+| `export_entries` | Export filtered ledger rows as JSON or CSV. |
+| `clear_entries` | Clear ledger rows after an explicit confirmation token. |
 | `agent_execute` | Single-call operation wrapper for constrained LLM tool hosts. |
 | `openapi_spec` | Compact machine-readable API metadata. |
 
@@ -31,18 +34,46 @@ All endpoints return Frappe-style JSON:
 }
 ```
 
+## Minimal Expense Payload
+
+```json
+{
+  "amount": 42.5,
+  "description": "MTR commute top up"
+}
+```
+
+Defaults: `direction=Expense`, `household_member=Victor`, `account=Quick Capture`, `currency=HKD`, and `posted_on=today`.
+
+## Export Payload
+
+```json
+{
+  "filters": { "q": "Wellcome" },
+  "format": "csv"
+}
+```
+
+`format` can be `json` or `csv`.
+
+## Clear Payload
+
+```json
+{
+  "confirm": "CLEAR_FAMILY_LEDGER"
+}
+```
+
+Clear operations intentionally reject requests without the exact confirmation token.
+
 ## Agent Execute Payload
 
 ```json
 {
-  "operation": "create_entry",
+  "operation": "create_minimal_expense",
   "payload": {
-    "household_member": "Partner",
-    "account": "Agent Inbox",
-    "direction": "Expense",
     "amount": 88,
-    "merchant": "Coffee shop",
-    "source_text": "Coffee shop family breakfast",
+    "description": "Coffee shop family breakfast",
     "created_by_agent": true
   }
 }

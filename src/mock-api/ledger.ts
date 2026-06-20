@@ -1,4 +1,13 @@
-import type { Direction, EntryFilters, LedgerEntry, LedgerSummary, TagSuggestion } from '../types'
+import type {
+  ClearLedgerResult,
+  Direction,
+  EntryFilters,
+  LedgerEntry,
+  LedgerExport,
+  LedgerSummary,
+  MinimalExpensePayload,
+  TagSuggestion,
+} from '../types'
 
 export const categories = [
   'Groceries',
@@ -168,6 +177,24 @@ export class LedgerStore {
     return structuredClone(entry)
   }
 
+  createMinimalExpense(payload: MinimalExpensePayload): LedgerEntry {
+    const description = String(payload.description || '').trim()
+    if (!description) {
+      throw new Error('description is required')
+    }
+    return this.createEntry({
+      posted_on: payload.posted_on,
+      household_member: payload.household_member || 'Victor',
+      account: payload.account || 'Quick Capture',
+      direction: 'Expense',
+      amount: Number(payload.amount),
+      currency: payload.currency || 'HKD',
+      source_text: description,
+      note: description,
+      created_by_agent: Boolean(payload.created_by_agent),
+    })
+  }
+
   listEntries(filters: EntryFilters = {}, limit = 50): LedgerEntry[] {
     const q = (filters.q || '').toLowerCase().trim()
     return this.entries
@@ -230,11 +257,45 @@ export class LedgerStore {
     return summary
   }
 
+  exportEntries(filters: EntryFilters = {}, format: 'json' | 'csv' = 'json'): LedgerExport {
+    const entries = this.listEntries(filters, 1000)
+    const stamp = new Date().toISOString().slice(0, 10)
+    if (format === 'csv') {
+      return {
+        format,
+        filename: `family-ledger-${stamp}.csv`,
+        content_type: 'text/csv',
+        entry_count: entries.length,
+        content: toCsv(entries),
+      }
+    }
+    return {
+      format: 'json',
+      filename: `family-ledger-${stamp}.json`,
+      content_type: 'application/json',
+      entry_count: entries.length,
+      entries,
+      content: JSON.stringify(entries, null, 2),
+    }
+  }
+
+  clearEntries(confirm: unknown): ClearLedgerResult {
+    if (confirm !== 'CLEAR_FAMILY_LEDGER') {
+      throw new Error('confirm must be CLEAR_FAMILY_LEDGER')
+    }
+    const deleted = this.entries.length
+    this.entries = []
+    return { ok: true, deleted }
+  }
+
   agentExecute(operation: string, payload: Record<string, unknown>) {
     if (operation === 'create_entry') return this.createEntry(payload)
+    if (operation === 'create_minimal_expense') return this.createMinimalExpense(payload as unknown as MinimalExpensePayload)
     if (operation === 'list_entries') return this.listEntries(payload.filters as EntryFilters, Number(payload.limit || 50))
     if (operation === 'get_summary') return this.getSummary(payload.filters as EntryFilters)
     if (operation === 'suggest_tags') return this.suggestTags(payload)
+    if (operation === 'export_entries') return this.exportEntries(payload.filters as EntryFilters, normalizeExportFormat(payload.format))
+    if (operation === 'clear_entries') return this.clearEntries(payload.confirm)
     throw new Error(`Unsupported operation: ${operation}`)
   }
 }
@@ -251,4 +312,42 @@ function normalizeTags(tags: unknown): string[] {
 
 function roundMoney(value: number) {
   return Math.round(value * 100) / 100
+}
+
+function normalizeExportFormat(format: unknown): 'json' | 'csv' {
+  return format === 'csv' ? 'csv' : 'json'
+}
+
+function toCsv(entries: LedgerEntry[]) {
+  const headers: Array<keyof LedgerEntry> = [
+    'name',
+    'posted_on',
+    'household_member',
+    'account',
+    'direction',
+    'amount',
+    'currency',
+    'merchant',
+    'category',
+    'tags',
+    'source_text',
+    'note',
+    'confidence',
+    'created_by_agent',
+  ]
+  const rows = entries.map((entry) =>
+    headers
+      .map((header) => {
+        const value = entry[header]
+        return csvCell(Array.isArray(value) ? value.join(';') : value)
+      })
+      .join(','),
+  )
+  return [headers.join(','), ...rows].join('\n')
+}
+
+function csvCell(value: unknown) {
+  const text = String(value ?? '')
+  if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`
+  return text
 }

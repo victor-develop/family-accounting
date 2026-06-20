@@ -4,6 +4,8 @@
 !.env.example
 node_modules/
 dist/
+family_accounting/public/frontend/
+family_accounting/public/node_modules
 coverage/
 playwright-report/
 test-results/

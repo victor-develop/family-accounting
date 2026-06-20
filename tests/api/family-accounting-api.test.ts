@@ -1,5 +1,5 @@
 import { once } from 'node:events'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createFamilyAccountingServer } from '../../src/mock-api/server'
 
 let running: Awaited<ReturnType<typeof createFamilyAccountingServer>> extends infer T
@@ -18,6 +18,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await running.close()
+})
+
+beforeEach(async () => {
+  await fetch(`${baseURL}/api/dev/reset`, { method: 'POST' })
 })
 
 async function rpc(method: string, payload: Record<string, unknown> = {}) {
@@ -71,6 +75,28 @@ describe('Family Accounting API', () => {
     expect(summary.expense).toBe(46.5)
   })
 
+  it('creates minimal expenses, exports entries, and clears data', async () => {
+    const created = await rpc('create_minimal_expense', {
+      amount: 39.9,
+      description: 'Taxi unique ride 9273',
+    })
+    const exported = await rpc('export_entries', { filters: { q: '9273' }, format: 'json' })
+    const clearRejected = await fetch(`${baseURL}/api/method/family_accounting.api.clear_entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirm: 'NOPE' }),
+    })
+    const cleared = await rpc('clear_entries', { confirm: 'CLEAR_FAMILY_LEDGER' })
+
+    expect(created.account).toBe('Quick Capture')
+    expect(created.category).toBe('Transport')
+    expect(exported.entry_count).toBe(1)
+    expect(exported.entries[0].source_text).toBe('Taxi unique ride 9273')
+    expect(clearRejected.status).toBe(400)
+    expect(cleared.deleted).toBeGreaterThan(0)
+    expect(await rpc('list_entries')).toHaveLength(0)
+  })
+
   it('executes agent operations through agent_execute', async () => {
     const result = await rpc('agent_execute', {
       operation: 'create_entry',
@@ -88,5 +114,23 @@ describe('Family Accounting API', () => {
     expect(result.operation).toBe('create_entry')
     expect(result.result.category).toBe('Education')
     expect(result.result.created_by_agent).toBe(true)
+  })
+
+  it('supports export and clear through agent_execute', async () => {
+    await rpc('agent_execute', {
+      operation: 'create_minimal_expense',
+      payload: { amount: 72, description: 'Book class supplies' },
+    })
+    const exported = await rpc('agent_execute', {
+      operation: 'export_entries',
+      payload: { filters: { q: 'Book class' }, format: 'csv' },
+    })
+    const cleared = await rpc('agent_execute', {
+      operation: 'clear_entries',
+      payload: { confirm: 'CLEAR_FAMILY_LEDGER' },
+    })
+
+    expect(exported.result.content).toContain('Book class supplies')
+    expect(cleared.result.ok).toBe(true)
   })
 })

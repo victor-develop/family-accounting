@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Button, FormControl, TabButtons } from 'frappe-ui'
-import { agentExecute, createEntry, getSummary, listEntries, suggestTags } from './api'
+import {
+  agentExecute,
+  clearEntries,
+  createEntry,
+  createMinimalExpense,
+  exportEntries,
+  getSummary,
+  listEntries,
+  suggestTags,
+} from './api'
 import type { Direction, EntryFilters, LedgerEntry, LedgerSummary, TagSuggestion } from './types'
 
 const activeTab = ref('record')
@@ -11,9 +20,15 @@ const suggestion = ref<TagSuggestion | null>(null)
 const apiResult = ref('')
 const status = ref('')
 const loading = ref(false)
+const today = new Date().toISOString().slice(0, 10)
+
+const quickDraft = reactive({
+  amount: 0,
+  description: '',
+})
 
 const draft = reactive({
-  posted_on: '2026-06-20',
+  posted_on: today,
   household_member: 'Victor',
   account: 'HSBC Visa',
   direction: 'Expense' as Direction,
@@ -116,6 +131,23 @@ async function runSuggest() {
   status.value = `Suggested ${suggestion.value.category} with ${Math.round(suggestion.value.confidence * 100)}% confidence.`
 }
 
+async function saveMinimalExpense() {
+  loading.value = true
+  try {
+    const created = await createMinimalExpense({
+      amount: Number(quickDraft.amount),
+      description: quickDraft.description,
+    })
+    status.value = `Saved quick expense ${formatMoney(created.amount)} as ${created.category}.`
+    quickDraft.amount = 0
+    quickDraft.description = ''
+    await loadData()
+    activeTab.value = 'ledger'
+  } finally {
+    loading.value = false
+  }
+}
+
 async function saveEntry() {
   loading.value = true
   try {
@@ -128,6 +160,34 @@ async function saveEntry() {
     resetDraft()
     await loadData()
     activeTab.value = 'ledger'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function downloadLedger(format: 'json' | 'csv') {
+  const cleanFilters = Object.fromEntries(Object.entries(filters).filter(([, value]) => value)) as EntryFilters
+  const exported = await exportEntries(cleanFilters, format)
+  const content = exported.content || JSON.stringify(exported.entries || [], null, 2)
+  const blob = new Blob([content], { type: exported.content_type })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = exported.filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+  status.value = `Exported ${exported.entry_count} entries as ${format.toUpperCase()}.`
+}
+
+async function clearLedger() {
+  if (!window.confirm('Clear all family ledger entries?')) return
+  loading.value = true
+  try {
+    const result = await clearEntries()
+    status.value = `Cleared ${result.deleted} entries.`
+    await loadData()
   } finally {
     loading.value = false
   }
@@ -217,10 +277,25 @@ function barStyle(value: number, max: number) {
     </section>
 
     <section v-if="activeTab === 'record'" class="work-grid record-grid">
-      <form class="panel form-panel" aria-label="Record a ledger entry" @submit.prevent="saveEntry">
+      <div class="record-stack">
+        <section class="panel minimal-panel" aria-label="Minimal expense record">
+          <div class="panel-title">
+            <h2>Minimal Expense</h2>
+            <p aria-live="polite">{{ status }}</p>
+          </div>
+          <div class="minimal-row">
+            <FormControl v-model="quickDraft.amount" type="number" label="Expense amount" required min="0" step="0.01" />
+            <FormControl v-model="quickDraft.description" label="Description" required placeholder="Lunch, taxi, groceries..." />
+            <Button type="button" icon-left="lucide-save" theme="blue" variant="solid" size="md" :loading="loading" @click="saveMinimalExpense">
+              Save
+            </Button>
+          </div>
+        </section>
+
+        <form class="panel form-panel" aria-label="Record a ledger entry" @submit.prevent="saveEntry">
         <div class="panel-title">
           <h2>Quick Record</h2>
-          <p aria-live="polite">{{ status }}</p>
+          <p>Full details</p>
         </div>
         <FormControl v-model="draft.source_text" type="textarea" label="Receipt or chat text" placeholder="Paste a receipt line or family chat message" />
         <div class="two-col">
@@ -249,7 +324,8 @@ function barStyle(value: number, max: number) {
             Save entry
           </Button>
         </div>
-      </form>
+        </form>
+      </div>
 
       <aside class="panel insight-panel" aria-label="Smart tag result">
         <div class="panel-title">
@@ -282,8 +358,16 @@ function barStyle(value: number, max: number) {
 
     <section v-else-if="activeTab === 'ledger'" class="panel ledger-panel">
       <div class="panel-title">
-        <h2>Ledger</h2>
-        <Button icon-left="lucide-refresh-cw" variant="outline" @click="loadData">Refresh</Button>
+        <div>
+          <h2>Ledger</h2>
+          <p aria-live="polite">{{ status }}</p>
+        </div>
+        <div class="button-row ledger-actions">
+          <Button icon-left="lucide-download" variant="outline" @click="downloadLedger('json')">JSON</Button>
+          <Button icon-left="lucide-file-down" variant="outline" @click="downloadLedger('csv')">CSV</Button>
+          <Button icon-left="lucide-trash-2" variant="outline" theme="red" :loading="loading" @click="clearLedger">Clear</Button>
+          <Button icon-left="lucide-refresh-cw" variant="outline" @click="loadData">Refresh</Button>
+        </div>
       </div>
       <div class="filters">
         <FormControl v-model="filters.q" label="Search" placeholder="merchant, tag, note" @change="loadData" />
@@ -357,9 +441,12 @@ function barStyle(value: number, max: number) {
         </div>
         <div class="endpoint-list">
           <code>/api/method/family_accounting.api.create_entry</code>
+          <code>/api/method/family_accounting.api.create_minimal_expense</code>
           <code>/api/method/family_accounting.api.list_entries</code>
           <code>/api/method/family_accounting.api.get_summary</code>
           <code>/api/method/family_accounting.api.suggest_tags</code>
+          <code>/api/method/family_accounting.api.export_entries</code>
+          <code>/api/method/family_accounting.api.clear_entries</code>
           <code>/api/method/family_accounting.api.agent_execute</code>
         </div>
         <div class="button-row">

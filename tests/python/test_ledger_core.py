@@ -1,6 +1,12 @@
 import unittest
 
-from family_accounting.ledger_core import LedgerValidationError, normalize_entry, suggest_tags, summarize
+from family_accounting.ledger_core import (
+    LedgerValidationError,
+    minimal_expense_payload,
+    normalize_entry,
+    suggest_tags,
+    summarize,
+)
 
 
 class LedgerCoreTest(unittest.TestCase):
@@ -37,6 +43,16 @@ class LedgerCoreTest(unittest.TestCase):
     def test_invalid_amount_raises(self):
         with self.assertRaises(LedgerValidationError):
             normalize_entry({"household_member": "Victor", "account": "Cash", "amount": 0})
+
+    def test_minimal_expense_payload_uses_safe_defaults(self):
+        payload = minimal_expense_payload({"amount": 33, "description": "MTR top up"})
+        entry = normalize_entry(payload)
+
+        self.assertEqual(entry.household_member, "Victor")
+        self.assertEqual(entry.account, "Quick Capture")
+        self.assertEqual(entry.direction, "Expense")
+        self.assertEqual(entry.category, "Transport")
+        self.assertEqual(entry.source_text, "MTR top up")
 
     def test_summarize_entries(self):
         summary = summarize(
