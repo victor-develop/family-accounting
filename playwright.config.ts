@@ -15,7 +15,7 @@ export default defineConfig({
     command: 'npm run build && SERVE_DIST=1 PORT=4287 npm run dev:test',
     url: 'http://127.0.0.1:4287',
     reuseExistingServer: false,
-    timeout: 30_000,
+    timeout: 90_000,
   },
   projects: [
     {

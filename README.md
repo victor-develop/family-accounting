@@ -1,5 +1,7 @@
 # Family Ledger
 
+[![CI](https://github.com/victor-develop/family-accounting/actions/workflows/ci.yml/badge.svg)](https://github.com/victor-develop/family-accounting/actions/workflows/ci.yml)
+
 Family Ledger is a small household accounting system built as a Frappe Framework app with a Frappe UI front end. It supports recording expenses and income, searching ledger history, spending analytics, provider-neutral tag suggestions, and LLM-friendly APIs for family chat assistants.
 
 ## What Is Included
