@@ -91,6 +91,8 @@ During active front-end work, run the local Vite harness. For Frappe serving, `n
 
 Frappe stores ledger data in the site database as DocType tables, including `tabFamily Accounting Entry` and `tabFamily Accounting Budget`. On the local bench used for development, that means MariaDB for the selected site.
 
+For production deployment (gunicorn without nginx, Cloudflare Tunnel, programmatic API access for agents), see the [Production Deployment Guide](docs/production-deployment.md).
+
 ## LLM Assistant Skill
 
 The portable skill lives at:

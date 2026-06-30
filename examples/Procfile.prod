@@ -1,0 +1,30 @@
+# Production Procfile for Family Ledger.
+#
+# The default Procfile runs `bench serve` (Werkzeug dev server) and `bench watch`
+# (live reload) — neither belongs in production. This Procfile runs gunicorn
+# plus the background workers Frappe needs.
+#
+# Usage:
+#   cp examples/Procfile.prod .
+#   bench start --procfile Procfile.prod
+#
+# Notes:
+# - The web process cd's into sites/ so Frappe's relative paths (site logs,
+#   assets/assets.json) resolve correctly. This is required when running gunicorn
+#   without nginx.
+# - --threads is intentionally omitted: gunicorn's gthread worker calls
+#   os.eventfd() which does not exist on macOS. Use sync workers on macOS.
+# - Rename `family-accounting.example.com` below to your actual site name.
+
+redis_cache: redis-server config/redis_cache.conf
+redis_queue: redis-server config/redis_queue.conf
+
+web: sh -c 'cd sites && SITES_PATH=. PYTHONPATH=.. exec ../env/bin/gunicorn -b 0.0.0.0:8001 -w 4 --preload wsgi:application'
+
+socketio: node apps/frappe/socketio.js
+
+schedule: bench schedule
+
+short_worker: OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES NO_PROXY=* bench worker --queue short,default 1>> logs/worker.log 2>> logs/worker.error.log
+
+long_worker: OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES NO_PROXY=* bench worker --queue long 1>> logs/worker.log 2>> logs/worker.error.log
