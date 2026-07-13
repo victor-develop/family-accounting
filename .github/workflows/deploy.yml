@@ -17,21 +17,25 @@ jobs:
           SITE=frappe.otterrun.work
 
           cd "$BENCH/apps/family_accounting"
-          echo "=== [1/5] Checkout release ${{ github.event.release.tag_name || github.ref_name }} ==="
+          echo "=== [1/6] Checkout release ${{ github.event.release.tag_name || github.ref_name }} ==="
           git fetch --tags
           git checkout "${{ github.event.release.tag_name || github.ref_name }}"
 
           cd "$BENCH"
-          echo "=== [2/5] Install dependencies ==="
           source env/bin/activate
+
+          echo "=== [2/6] Install dependencies ==="
           pip install -e apps/family_accounting --quiet
 
-          echo "=== [3/5] Migrate database ==="
+          echo "=== [3/6] Backup database ==="
+          bench --site "$SITE" backup --with-files
+
+          echo "=== [4/6] Migrate database ==="
           bench --site "$SITE" migrate
 
-          echo "=== [4/5] Build assets ==="
+          echo "=== [5/6] Build assets ==="
           bench build --app family_accounting
 
-          echo "=== [5/5] Graceful reload gunicorn ==="
+          echo "=== [6/6] Graceful reload gunicorn ==="
           pkill -HUP -f gunicorn || true
           echo "✅ Deploy complete: ${{ github.event.release.tag_name || github.ref_name }}"
