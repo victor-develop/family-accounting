@@ -33,5 +33,5 @@ jobs:
           bench build --app family_accounting
 
           echo "=== [5/5] Graceful reload gunicorn ==="
-          pkill -HUP -f "gunicorn.*frappe.app"
+          pkill -HUP -f gunicorn || true
           echo "✅ Deploy complete: ${{ github.event.release.tag_name || github.ref_name }}"
