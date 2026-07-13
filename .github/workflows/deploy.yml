@@ -1,0 +1,37 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Deploy Family Accounting
+        run: |
+          set -euo pipefail
+          BENCH=/Users/mac/opencode-workspace-default/frappe-bench
+          SITE=frappe.otterrun.work
+
+          cd "$BENCH/apps/family_accounting"
+          echo "=== [1/5] Checkout release ${{ github.event.release.tag_name || github.ref_name }} ==="
+          git fetch --tags
+          git checkout "${{ github.event.release.tag_name || github.ref_name }}"
+
+          cd "$BENCH"
+          echo "=== [2/5] Install dependencies ==="
+          source env/bin/activate
+          pip install -e apps/family_accounting --quiet
+
+          echo "=== [3/5] Migrate database ==="
+          bench --site "$SITE" migrate
+
+          echo "=== [4/5] Build assets ==="
+          bench build --app family_accounting
+
+          echo "=== [5/5] Graceful reload gunicorn ==="
+          pkill -HUP -f "gunicorn.*frappe.app"
+          echo "✅ Deploy complete: ${{ github.event.release.tag_name || github.ref_name }}"
